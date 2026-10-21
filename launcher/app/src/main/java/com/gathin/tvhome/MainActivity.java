@@ -143,6 +143,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView btnWifi;
     private TextView shamsiDate;
     private TextView stats;
+    private View prayerWidget;
+    private TextView prayerTitle, prayerSubtitle;
+    private Config.PrayerWidget prayerWidgetConfig;
     private List<RaceWeekend.Race> raceCalendar;
     private View racePanel;
     private TextView raceKicker, raceHeadline, raceSessions;
@@ -280,11 +283,61 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             updateGreeting();
             updateRace();
             updateWifiLabel();
+            updatePrayerWidget();
             sky.update();
             wallpaperPlayer.update();
             handler.postDelayed(this, MINUTE_MS);
         }
     };
+
+    private void updatePrayerWidget() {
+        if (prayerWidget == null || prayerWidgetConfig == null || !prayerWidgetConfig.enabled) {
+            if (prayerWidget != null) prayerWidget.setVisibility(View.GONE);
+            return;
+        }
+
+        prayerWidget.setVisibility(View.VISIBLE);
+
+        String title = prayerWidgetConfig.title;
+        String subtitle = prayerWidgetConfig.subtitle;
+
+        try {
+            java.time.LocalTime now = java.time.LocalTime.now();
+            String[] names = {"Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"};
+            String[] times = {
+                    prayerWidgetConfig.fajr,
+                    prayerWidgetConfig.dhuhr,
+                    prayerWidgetConfig.asr,
+                    prayerWidgetConfig.maghrib,
+                    prayerWidgetConfig.isha
+            };
+
+            java.time.LocalTime nextTime = null;
+            String nextName = null;
+
+            for (int i = 0; i < times.length; i++) {
+                if (times[i] != null && times[i].contains(":")) {
+                    String[] parts = times[i].split(":");
+                    java.time.LocalTime t = java.time.LocalTime.of(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+                    if (t.isAfter(now)) {
+                        nextTime = t;
+                        nextName = names[i];
+                        break;
+                    }
+                }
+            }
+
+            if (nextTime != null) {
+                long diffMinutes = java.time.Duration.between(now, nextTime).toMinutes();
+                String countdown = diffMinutes < 60 ? diffMinutes + "m lagi" : (diffMinutes / 60) + "j " + (diffMinutes % 60) + "m lagi";
+                title = "🕌 " + nextName + " " + String.format(java.util.Locale.US, "%02d:%02d", nextTime.getHour(), nextTime.getMinute());
+                subtitle = "(" + countdown + ")" + (prayerWidgetConfig.city.isEmpty() ? "" : " • " + prayerWidgetConfig.city);
+            }
+        } catch (Exception ignored) {}
+
+        if (prayerTitle != null && title != null) prayerTitle.setText(title);
+        if (prayerSubtitle != null && subtitle != null) prayerSubtitle.setText(subtitle);
+    }
 
     public void onWallpaperChanged(String name) {
         runOnUiThread(() -> {
@@ -370,6 +423,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWifi = findViewById(R.id.btnWifi);
         shamsiDate = findViewById(R.id.shamsiDate);
         stats = findViewById(R.id.stats);
+        prayerWidget = findViewById(R.id.prayerWidget);
+        prayerTitle = findViewById(R.id.prayerTitle);
+        prayerSubtitle = findViewById(R.id.prayerSubtitle);
+        prayerWidgetConfig = cfg.prayerWidget;
+        updatePrayerWidget();
         raceCalendar = cfg.raceCalendar;
         racePanel = findViewById(R.id.racePanel);
         raceKicker = findViewById(R.id.raceKicker);

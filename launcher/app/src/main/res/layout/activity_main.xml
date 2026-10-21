@@ -296,6 +296,41 @@
                 android:visibility="gone" />
 
             <LinearLayout
+                android:id="@+id/prayerWidget"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/stats"
+                android:layout_alignStart="@id/leftBlock"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/pill_bg"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:focusable="false"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/prayerTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/outfit_medium" />
+
+                <TextView
+                    android:id="@+id/prayerSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_regular" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/topButtons"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

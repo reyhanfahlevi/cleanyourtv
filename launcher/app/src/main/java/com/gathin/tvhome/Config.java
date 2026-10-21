@@ -110,6 +110,33 @@ final class Config {
     final boolean dockGlass;
     /** Dock background opacity 0-100% (config.xml, dock_opacity). */
     final int dockOpacity;
+    /** Prayer times live widget. */
+    final PrayerWidget prayerWidget;
+
+    static final class PrayerWidget {
+        final boolean enabled;
+        final String city;
+        final String title;
+        final String subtitle;
+        final String fajr;
+        final String dhuhr;
+        final String asr;
+        final String maghrib;
+        final String isha;
+
+        PrayerWidget(boolean enabled, String city, String title, String subtitle,
+                     String fajr, String dhuhr, String asr, String maghrib, String isha) {
+            this.enabled = enabled;
+            this.city = city;
+            this.title = title;
+            this.subtitle = subtitle;
+            this.fajr = fajr;
+            this.dhuhr = dhuhr;
+            this.asr = asr;
+            this.maghrib = maghrib;
+            this.isha = isha;
+        }
+    }
 
     private Config(List<String> dockApps, boolean fillDock, List<String> hiddenApps, String liveTvPackage,
                    String liveTvAction, Map<String, String> launchActions, Map<String, String> appLabels,
@@ -121,7 +148,7 @@ final class Config {
                    int wallpaperRotationMinutes, int wallpaperDim, boolean overlayApplied,
                    Festival festival, int[] inputKeycodes, List<String> appKeys,
                    List<RaceWeekend.Race> raceCalendar, boolean cinematicHome, boolean ambientGlow,
-                   boolean dockGlass, int dockOpacity) {
+                   boolean dockGlass, int dockOpacity, PrayerWidget prayerWidget) {
         this.inputKeycodes = inputKeycodes;
         this.appKeys = Collections.unmodifiableList(appKeys);
         this.dockApps = Collections.unmodifiableList(dockApps);
@@ -166,6 +193,7 @@ final class Config {
         this.ambientGlow = ambientGlow;
         this.dockGlass = dockGlass;
         this.dockOpacity = dockOpacity;
+        this.prayerWidget = prayerWidget;
     }
 
     /** The folder the theme tools push into; null when external storage is unavailable. */
@@ -305,6 +333,24 @@ final class Config {
         Festival festival = json == null ? Festival.NONE : Festival.parse(string(json, "festival", ""),
                 string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
 
+        PrayerWidget prayerWidget = null;
+        if (json != null && json.has("widget_prayer")) {
+            JSONObject pw = json.optJSONObject("widget_prayer");
+            if (pw != null) {
+                prayerWidget = new PrayerWidget(
+                        pw.optBoolean("enabled", false),
+                        pw.optString("city", ""),
+                        pw.optString("title", ""),
+                        pw.optString("subtitle", ""),
+                        pw.optString("fajr", ""),
+                        pw.optString("dhuhr", ""),
+                        pw.optString("asr", ""),
+                        pw.optString("maghrib", ""),
+                        pw.optString("isha", "")
+                );
+            }
+        }
+
         return new Config(dock, fillDock, hidden, liveTv, liveTvAction, packageMap(launchActions), packageMap(appLabels),
                 packageMap(appBanners), panelService,
                 panelAction, inputAction,
@@ -313,7 +359,7 @@ final class Config {
                 Math.max(0, Math.min(100, skyIntensity)), settingsKeycodes, settingsKeyPanel, wallpaperEnabled, wallpaper,
                 wallpapers, rotationMinutes, wallpaperDim, applied,
                 festival, inputKeycodes, appKeys, json == null ? Collections.emptyList() : raceCalendar(json), cinematic, ambientGlow,
-                dockGlass, dockOpacity);
+                dockGlass, dockOpacity, prayerWidget);
     }
 
     /**
