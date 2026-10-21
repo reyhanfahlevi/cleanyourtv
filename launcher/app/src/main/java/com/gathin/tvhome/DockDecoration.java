@@ -1,9 +1,11 @@
 package com.gathin.tvhome;
 
 import android.graphics.Canvas;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -17,15 +19,31 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
     private final Paint band = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
+    private final boolean glass;
+    private final int opacity;
+    private float lastL, lastT, lastR, lastB;
 
-    /** @param translucent the cinematic shelf's band: the artwork and the glow show through it. */
-    DockDecoration(int dockSize, float density, boolean translucent) {
+    /**
+     * @param translucent the cinematic shelf's band: the artwork and the glow show through it.
+     * @param glass whether to render a glassmorphic gradient and specular rim.
+     * @param opacity dock background opacity percentage (0-100).
+     */
+    DockDecoration(int dockSize, float density, boolean translucent, boolean glass, int opacity) {
         this.dockSize = dockSize;
         this.density = density;
-        band.setColor(translucent ? 0x8C121014 : 0xFF141416);
+        this.glass = glass;
+        this.opacity = Math.max(0, Math.min(100, opacity));
+
         edge.setStyle(Paint.Style.STROKE);
-        edge.setStrokeWidth(density);
-        edge.setColor(translucent ? 0x26FFFFFF : 0x1FFFFFFF);
+        edge.setStrokeWidth(density * (glass ? 1.25f : 1.0f));
+
+        if (!glass) {
+            int baseAlpha = translucent ? 0x8C : 0xFF;
+            int effectiveAlpha = (baseAlpha * this.opacity) / 100;
+            band.setColor((effectiveAlpha << 24) | 0x141416);
+            int edgeAlpha = ((translucent ? 0x26 : 0x1F) * this.opacity) / 100;
+            edge.setColor((edgeAlpha << 24) | 0xFFFFFF);
+        }
     }
 
     @Override
@@ -40,6 +58,8 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
 
     @Override
     public void onDraw(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+        if (opacity <= 0) return;
+
         boolean any = false;
         for (int i = 0; i < parent.getChildCount(); i++) {
             View child = parent.getChildAt(i);
@@ -67,6 +87,37 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         float side = Math.max(0f, Math.min(pad, Math.min(rect.left, parent.getWidth() - rect.right) - density));
         rect.inset(-side, -pad);
         float radius = 26 * density;
+
+        if (glass) {
+            if (rect.left != lastL || rect.top != lastT || rect.right != lastR || rect.bottom != lastB) {
+                lastL = rect.left;
+                lastT = rect.top;
+                lastR = rect.right;
+                lastB = rect.bottom;
+
+                float alphaFactor = opacity / 100f;
+                // Frosted charcoal glass: top has soft light sheen, bottom blends into deep translucent dark
+                int topAlpha = (int) (0x66 * alphaFactor);
+                int bottomAlpha = (int) (0x33 * alphaFactor);
+                int topColor = (topAlpha << 24) | 0x363946;
+                int bottomColor = (bottomAlpha << 24) | 0x12131A;
+                band.setShader(new LinearGradient(
+                        rect.left, rect.top, rect.left, rect.bottom,
+                        topColor, bottomColor, Shader.TileMode.CLAMP
+                ));
+
+                // Specular rim: top catch-light reflects ambient light, bottom rim is soft
+                int strokeTopAlpha = (int) (0x75 * alphaFactor);
+                int strokeBottomAlpha = (int) (0x22 * alphaFactor);
+                int strokeTop = (strokeTopAlpha << 24) | 0xFFFFFF;
+                int strokeBottom = (strokeBottomAlpha << 24) | 0xFFFFFF;
+                edge.setShader(new LinearGradient(
+                        rect.left, rect.top, rect.left, rect.bottom,
+                        strokeTop, strokeBottom, Shader.TileMode.CLAMP
+                ));
+            }
+        }
+
         c.drawRoundRect(rect, radius, radius, band);
         c.drawRoundRect(rect, radius, radius, edge);
     }

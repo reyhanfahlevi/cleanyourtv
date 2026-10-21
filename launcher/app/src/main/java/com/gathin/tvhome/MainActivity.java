@@ -108,6 +108,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private String sourcePanelAction;
 
     private AppAdapter adapter;
+    private static TvHubServer hubServer;
     private RecyclerView grid;
     private FrameLayout root;
     private WallpaperPlayer wallpaperPlayer;
@@ -120,6 +121,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private LinearLayout heroDots;
     /** Cinematic top shelf (config.xml, cinematic_home): the focused dock app's artwork behind a larger shelf. */
     private boolean cinematic;
+    private boolean ambientGlow;
     private ImageView heroArt;
     private static final float HERO_ART_ALPHA = 0.5f;
     /** Softened artwork per app (HeroArt, about 5 KB each), made the first time its dock tile is focused. */
@@ -316,6 +318,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         glass = findViewById(R.id.glass);
         if (festive) glass.setAccent(festival.accentColor());
         ambient = findViewById(R.id.ambient);
+        ambientGlow = cfg.ambientGlow;
+        if (!ambientGlow) ambient.setVisibility(View.GONE);
         // The glow is one bitmap, so its alpha can be applied while drawing it. Otherwise every frame of
         // a fade renders it into a full-screen offscreen buffer first.
         ambient.forceHasOverlappingRendering(false);
@@ -412,7 +416,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             public void onChildViewDetachedFromWindow(@NonNull View v) {
             }
         });
-        if (dockRow) grid.addItemDecoration(new DockDecoration(COLUMNS, density, cinematic));
+        if (dockRow) grid.addItemDecoration(new DockDecoration(COLUMNS, density, cinematic, cfg.dockGlass, cfg.dockOpacity));
         if (animations) {
             int enterAnim = reducedMotion ? R.anim.tile_enter_reduced : R.anim.tile_enter;
             float enterDelay = reducedMotion ? 0f : 0.06f;
@@ -560,6 +564,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         // Not after recreate(): the launch intent survives it and would open the settings again.
         if (savedInstanceState == null) openLauncherSettingsIfAsked(getIntent());
+
+        if (hubServer == null) {
+            try {
+                hubServer = new TvHubServer(this);
+                hubServer.start();
+            } catch (Exception e) {
+                android.util.Log.e("TvHome", "Failed to start TvHubServer", e);
+            }
+        } else {
+            hubServer.updateActivity(this);
+        }
     }
 
     private boolean openLauncherSettingsIfAsked(Intent intent) {
@@ -830,6 +845,62 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return true;
         }
         return super.dispatchKeyEvent(event);   // arrows navigate; OK on a top-bar pill works as usual
+    }
+
+    public void handleRemoteNavigation(String key) {
+        if ("home".equals(key)) {
+            try {
+                Intent home = new Intent(Intent.ACTION_MAIN)
+                        .addCategory(Intent.CATEGORY_HOME)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                startActivity(home);
+            } catch (Exception ignored) {}
+            try {
+                Intent explicit = new Intent(this, MainActivity.class);
+                explicit.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(explicit);
+            } catch (Exception ignored) {}
+            focusTile(0);
+            return;
+        }
+        if ("back".equals(key)) {
+            onBackPressed();
+            return;
+        }
+
+        View focused = getCurrentFocus();
+        if (focused == null) {
+            focusTile(0);
+            focused = getCurrentFocus();
+            if (focused == null) return;
+        }
+
+        if ("ok".equals(key) || "enter".equals(key)) {
+            focused.performClick();
+            return;
+        }
+
+        int dir;
+        switch (key) {
+            case "up": dir = View.FOCUS_UP; break;
+            case "down": dir = View.FOCUS_DOWN; break;
+            case "left": dir = View.FOCUS_LEFT; break;
+            case "right": dir = View.FOCUS_RIGHT; break;
+            default: return;
+        }
+
+        View next = focused.focusSearch(dir);
+        if (next != null) {
+            next.requestFocus(dir);
+        } else {
+            long now = SystemClock.uptimeMillis();
+            int code = KeyEvent.KEYCODE_DPAD_DOWN;
+            if ("up".equals(key)) code = KeyEvent.KEYCODE_DPAD_UP;
+            else if ("left".equals(key)) code = KeyEvent.KEYCODE_DPAD_LEFT;
+            else if ("right".equals(key)) code = KeyEvent.KEYCODE_DPAD_RIGHT;
+            grid.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0));
+            grid.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, code, 0));
+        }
     }
 
     /** Adapter position of the focused tile, or -1 when focus is not on a tile. */
@@ -1195,13 +1266,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (!heroShown) {
             stopAmbientAnimation();
             hero.animate().cancel();
-            ambient.animate().cancel();
+            if (ambientGlow) ambient.animate().cancel();
             fillHero(position, label);
             hero.setY(y);
             hero.setTranslationX(0f);
             hero.animate().alpha(1f).setDuration(260).start();
-            setAmbient(color);
-            ambient.animate().alpha(1f).setDuration(600).start();
+            if (ambientGlow) {
+                setAmbient(color);
+                ambient.animate().alpha(1f).setDuration(600).start();
+            }
             heroShown = true;
         } else if (changed) {
             if (advancedEffects) hero.animate().cancel();
@@ -1211,13 +1284,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 hero.setTranslationX(12 * density);
                 hero.animate().alpha(1f).translationX(0f).setDuration(200).start();
             }).start();
-            if (advancedEffects) {
-                transitionAmbient(color);
-            } else if (color != ambientColor) {
-                ambient.animate().alpha(0.35f).setDuration(200).withEndAction(() -> {
-                    setAmbient(color);
-                    ambient.animate().alpha(1f).setDuration(500).start();
-                }).start();
+            if (ambientGlow) {
+                if (advancedEffects) {
+                    transitionAmbient(color);
+                } else if (color != ambientColor) {
+                    ambient.animate().alpha(0.35f).setDuration(200).withEndAction(() -> {
+                        setAmbient(color);
+                        ambient.animate().alpha(1f).setDuration(500).start();
+                    }).start();
+                }
             }
         } else {
             hero.setY(y);
@@ -1355,6 +1430,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * so changing apps neither repaints it on the CPU (about 11 ms) nor uploads it again.
      */
     private void setAmbient(int color) {
+        if (!ambientGlow) {
+            ambientColor = color;
+            return;
+        }
         if (color == ambientColor && ambient.getBackground() != null) return;
         ambientColor = color;
         BitmapDrawable glow = (BitmapDrawable) ambient.getBackground();
@@ -1390,6 +1469,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void transitionAmbient(int color) {
+        if (!ambientGlow) return;
         // A rapid focus change continues from the colour actually displayed on screen.
         stopAmbientAnimation();
         ambient.animate().cancel();
@@ -1416,6 +1496,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * name above the dock does not show (every grid tile has its name underneath).
      */
     private void showGlowOnly(int position) {
+        if (!ambientGlow) {
+            stopAmbientAnimation();
+            hero.animate().cancel();
+            hero.setAlpha(0f);
+            heroArt.animate().cancel();
+            heroArt.setAlpha(0f);
+            heroShown = false;
+            return;
+        }
         int color = adapter.ambientColorAt(position);
         stopAmbientAnimation();
         hero.animate().cancel();
@@ -1444,16 +1533,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (!heroShown) return;
         stopAmbientAnimation();
         hero.animate().cancel();
-        ambient.animate().cancel();
+        if (ambientGlow) ambient.animate().cancel();
         heroArt.animate().cancel();
         heroShown = false;
         if (animations) {
             hero.animate().alpha(0f).setDuration(reducedMotion ? 100 : 160).start();
-            ambient.animate().alpha(0f).setDuration(reducedMotion ? 140 : 300).start();
+            if (ambientGlow) ambient.animate().alpha(0f).setDuration(reducedMotion ? 140 : 300).start();
             heroArt.animate().alpha(0f).setDuration(reducedMotion ? 140 : 300).start();
         } else {
             hero.setAlpha(0f);
-            ambient.setAlpha(0f);
+            if (ambientGlow) ambient.setAlpha(0f);
             heroArt.setAlpha(0f);
         }
     }

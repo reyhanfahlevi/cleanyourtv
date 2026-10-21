@@ -1,0 +1,36 @@
+# Skyworth SWTV ("SWTV"), Android TV 11 (API 30), build RTO9.240708.002
+# ro.product.model=SWTV, ro.product.device=shibuya, MediaTek.
+# Stock launcher: com.google.android.tvlauncher (classic Android TV home).
+# Live TV and inputs: com.mediatek.wwtv.tvcenter and com.mediatek.tvinput.
+#
+# Apply:   TV_HOST=<tv ip> tools/disable.sh examples/skyworth-swtv-shibuya/debloat.txt
+# Undo:    TV_HOST=<tv ip> tools/restore.sh examples/skyworth-swtv-shibuya/debloat.txt com.google.android.tvlauncher
+#
+# Disabled from factory:
+# com.google.android.marvin.talkback
+# com.google.android.videos
+# com.google.android.play.games
+
+# Skyworth content, demos, and preloads
+com.smartdevice.common.demonow
+fusion.android.tv.demo
+com.Smartdevice.emanual
+com.mstar.android.tv.disclaimercustomization
+
+# Telemetry, analytics, and diagnostics
+com.google.android.feedback
+com.airoha.ble.ota
+com.coocaa.factory
+com.mediatek.testpq
+com.google.android.partnersetup
+com.google.android.apps.nbu.smartconnect.tv
+
+# Recommendations & stock home extras
+com.google.android.leanbacklauncher.partnercustomizer
+com.google.android.tvrecommendations
+
+# Unused streaming & voice services (per user choice)
+com.amazon.amazonvideo.livingroom
+com.ezviz.tv
+com.google.android.apps.mediashell
+com.google.android.katniss
