@@ -75,7 +75,7 @@ final class Order {
      */
     static Map<String, Integer> ranks(Order order, List<String> dockApps) {
         Map<String, Integer> r = new HashMap<>();
-        if (order == null || !order.dock.equals(dockKey(dockApps))) return r;
+        if (order == null) return r;
         for (int i = 0; i < order.keys.size(); i++) r.put(order.keys.get(i), i);
         return r;
     }
