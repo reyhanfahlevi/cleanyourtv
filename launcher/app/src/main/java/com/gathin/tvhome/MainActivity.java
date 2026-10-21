@@ -429,9 +429,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                         int h = w.getHeight() > 0 ? w.getHeight() : (int) (38 * density);
                         float targetY = pt - (16 * density) - h;
                         android.util.Log.i("TvHomePrayer", "Setting above_dock targetY=" + targetY + " pt=" + pt + " h=" + h + " density=" + density);
+                        w.setAlpha(1.0f);
+                        w.setElevation(20f * density);
+                        w.setZ(20f * density);
                         w.setTranslationY(Math.max(0, targetY));
                         w.bringToFront();
                     } else if (!isAboveDock) {
+                        w.setAlpha(1.0f);
                         w.setTranslationY(0f);
                     }
                 }
@@ -675,16 +679,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 glassTargetY -= dy;
                 glassScrollShift -= dy;
                 glass.setTranslationY(glass.getTranslationY() - dy);
-
-                // When grid scrolls down into apps (glassScrollShift is negative), fade out above-dock widgets smoothly
-                float shift = Math.abs(glassScrollShift);
-                float alpha = shift < (10 * density) ? 1.0f : Math.max(0f, 1.0f - (shift - 10 * density) / (40f * density));
-                if (prayerWidgetAboveDock != null && prayerWidgetAboveDock.getVisibility() == View.VISIBLE) {
-                    prayerWidgetAboveDock.setAlpha(alpha);
-                }
-                if (prayerFullStrip != null && prayerFullStrip.getVisibility() == View.VISIBLE) {
-                    prayerFullStrip.setAlpha(alpha);
-                }
             }
         });
 

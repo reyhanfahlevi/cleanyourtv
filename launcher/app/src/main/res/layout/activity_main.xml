@@ -441,6 +441,7 @@
                 android:paddingEnd="16dp"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
+                android:elevation="20dp"
                 android:focusable="false"
                 android:visibility="gone">
 
@@ -474,6 +475,7 @@
                 android:paddingEnd="16dp"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
+                android:elevation="20dp"
                 android:focusable="false"
                 android:visibility="gone">
 
