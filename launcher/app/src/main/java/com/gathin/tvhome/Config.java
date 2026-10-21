@@ -116,6 +116,7 @@ final class Config {
     static final class PrayerWidget {
         final boolean enabled;
         final String position;
+        final String mode;
         final String city;
         final String title;
         final String subtitle;
@@ -125,10 +126,11 @@ final class Config {
         final String maghrib;
         final String isha;
 
-        PrayerWidget(boolean enabled, String position, String city, String title, String subtitle,
+        PrayerWidget(boolean enabled, String position, String mode, String city, String title, String subtitle,
                      String fajr, String dhuhr, String asr, String maghrib, String isha) {
             this.enabled = enabled;
             this.position = position != null && !position.isEmpty() ? position : "header_left";
+            this.mode = mode != null && !mode.isEmpty() ? mode : "compact";
             this.city = city;
             this.title = title;
             this.subtitle = subtitle;
@@ -342,6 +344,7 @@ final class Config {
                 prayerWidget = new PrayerWidget(
                         pw.optBoolean("enabled", false),
                         pw.optString("position", "header_left"),
+                        pw.optString("mode", "compact"),
                         pw.optString("city", ""),
                         pw.optString("title", ""),
                         pw.optString("subtitle", ""),

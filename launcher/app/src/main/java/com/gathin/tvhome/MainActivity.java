@@ -143,10 +143,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView btnWifi;
     private TextView shamsiDate;
     private TextView stats;
-    private View prayerWidget, prayerWidgetRight, prayerWidgetAboveDock;
+    private View prayerWidget, prayerWidgetRight, prayerWidgetAboveDock, prayerFullStrip;
     private TextView prayerTitle, prayerSubtitle;
     private TextView prayerTitleRight, prayerSubtitleRight;
     private TextView prayerTitleAboveDock, prayerSubtitleAboveDock;
+    private TextView stripFajr, stripDhuhr, stripAsr, stripMaghrib, stripIsha, stripCountdown;
     private Config.PrayerWidget prayerWidgetConfig;
     private List<RaceWeekend.Race> raceCalendar;
     private View racePanel;
@@ -297,10 +298,86 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (prayerWidget != null) prayerWidget.setVisibility(View.GONE);
             if (prayerWidgetRight != null) prayerWidgetRight.setVisibility(View.GONE);
             if (prayerWidgetAboveDock != null) prayerWidgetAboveDock.setVisibility(View.GONE);
+            if (prayerFullStrip != null) prayerFullStrip.setVisibility(View.GONE);
             return;
         }
 
         String pos = prayerWidgetConfig.position != null ? prayerWidgetConfig.position : "header_left";
+        boolean isFullMode = "full".equals(prayerWidgetConfig.mode) || "full_strip".equals(pos);
+
+        java.time.LocalTime now = java.time.LocalTime.now();
+        String[] names = {"Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"};
+        String[] times = {
+                prayerWidgetConfig.fajr,
+                prayerWidgetConfig.dhuhr,
+                prayerWidgetConfig.asr,
+                prayerWidgetConfig.maghrib,
+                prayerWidgetConfig.isha
+        };
+
+        java.time.LocalTime nextTime = null;
+        String nextName = null;
+        int nextIndex = 0;
+
+        try {
+            for (int i = 0; i < times.length; i++) {
+                if (times[i] != null && times[i].contains(":")) {
+                    String[] parts = times[i].split(":");
+                    java.time.LocalTime t = java.time.LocalTime.of(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+                    if (t.isAfter(now)) {
+                        nextTime = t;
+                        nextName = names[i];
+                        nextIndex = i;
+                        break;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        String countdown = "";
+        String title = prayerWidgetConfig.title;
+        String subtitle = prayerWidgetConfig.subtitle;
+
+        if (nextTime != null) {
+            long diffMinutes = java.time.Duration.between(now, nextTime).toMinutes();
+            countdown = diffMinutes < 60 ? diffMinutes + "m" : (diffMinutes / 60) + "j " + (diffMinutes % 60) + "m";
+            title = "🕌 " + nextName + " " + String.format(java.util.Locale.US, "%02d:%02d", nextTime.getHour(), nextTime.getMinute());
+            subtitle = "(" + countdown + " lagi)" + (prayerWidgetConfig.city.isEmpty() ? "" : " • " + prayerWidgetConfig.city);
+        }
+
+        if (isFullMode && prayerFullStrip != null) {
+            if (prayerWidget != null) prayerWidget.setVisibility(View.GONE);
+            if (prayerWidgetRight != null) prayerWidgetRight.setVisibility(View.GONE);
+            if (prayerWidgetAboveDock != null) prayerWidgetAboveDock.setVisibility(View.GONE);
+            prayerFullStrip.setVisibility(View.VISIBLE);
+
+            TextView[] stripViews = {stripFajr, stripDhuhr, stripAsr, stripMaghrib, stripIsha};
+            for (int i = 0; i < stripViews.length; i++) {
+                if (stripViews[i] != null) {
+                    String tStr = (times[i] != null && !times[i].isEmpty()) ? times[i] : "--:--";
+                    stripViews[i].setText(names[i] + " " + tStr);
+                    if (i == nextIndex && nextTime != null) {
+                        stripViews[i].setTextColor(0xFFFFFFFF);
+                        stripViews[i].setTypeface(null, android.graphics.Typeface.BOLD);
+                    } else {
+                        stripViews[i].setTextColor(0x99FFFFFF);
+                        stripViews[i].setTypeface(null, android.graphics.Typeface.NORMAL);
+                    }
+                }
+            }
+            if (stripCountdown != null) {
+                if (nextName != null && !countdown.isEmpty()) {
+                    stripCountdown.setVisibility(View.VISIBLE);
+                    stripCountdown.setText("•  🕌 " + nextName + " in " + countdown);
+                } else {
+                    stripCountdown.setVisibility(View.GONE);
+                }
+            }
+            return;
+        }
+
+        // Compact Pill Mode
+        if (prayerFullStrip != null) prayerFullStrip.setVisibility(View.GONE);
 
         View targetWidget;
         TextView targetTitle;
@@ -328,43 +405,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         if (targetWidget == null) return;
         targetWidget.setVisibility(View.VISIBLE);
-
-        String title = prayerWidgetConfig.title;
-        String subtitle = prayerWidgetConfig.subtitle;
-
-        try {
-            java.time.LocalTime now = java.time.LocalTime.now();
-            String[] names = {"Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"};
-            String[] times = {
-                    prayerWidgetConfig.fajr,
-                    prayerWidgetConfig.dhuhr,
-                    prayerWidgetConfig.asr,
-                    prayerWidgetConfig.maghrib,
-                    prayerWidgetConfig.isha
-            };
-
-            java.time.LocalTime nextTime = null;
-            String nextName = null;
-
-            for (int i = 0; i < times.length; i++) {
-                if (times[i] != null && times[i].contains(":")) {
-                    String[] parts = times[i].split(":");
-                    java.time.LocalTime t = java.time.LocalTime.of(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
-                    if (t.isAfter(now)) {
-                        nextTime = t;
-                        nextName = names[i];
-                        break;
-                    }
-                }
-            }
-
-            if (nextTime != null) {
-                long diffMinutes = java.time.Duration.between(now, nextTime).toMinutes();
-                String countdown = diffMinutes < 60 ? diffMinutes + "m lagi" : (diffMinutes / 60) + "j " + (diffMinutes % 60) + "m lagi";
-                title = "🕌 " + nextName + " " + String.format(java.util.Locale.US, "%02d:%02d", nextTime.getHour(), nextTime.getMinute());
-                subtitle = "(" + countdown + ")" + (prayerWidgetConfig.city.isEmpty() ? "" : " • " + prayerWidgetConfig.city);
-            }
-        } catch (Exception ignored) {}
 
         if (targetTitle != null && title != null) targetTitle.setText(title);
         if (targetSubtitle != null && subtitle != null) targetSubtitle.setText(subtitle);
@@ -465,6 +505,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         prayerWidgetAboveDock = findViewById(R.id.prayerWidgetAboveDock);
         prayerTitleAboveDock = findViewById(R.id.prayerTitleAboveDock);
         prayerSubtitleAboveDock = findViewById(R.id.prayerSubtitleAboveDock);
+
+        prayerFullStrip = findViewById(R.id.prayerFullStrip);
+        stripFajr = findViewById(R.id.stripFajr);
+        stripDhuhr = findViewById(R.id.stripDhuhr);
+        stripAsr = findViewById(R.id.stripAsr);
+        stripMaghrib = findViewById(R.id.stripMaghrib);
+        stripIsha = findViewById(R.id.stripIsha);
+        stripCountdown = findViewById(R.id.stripCountdown);
 
         prayerWidgetConfig = cfg.prayerWidget;
         updatePrayerWidget();

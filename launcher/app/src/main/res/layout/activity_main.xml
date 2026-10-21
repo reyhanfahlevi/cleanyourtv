@@ -442,6 +442,106 @@
                 android:fontFamily="@font/outfit_regular" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/prayerFullStrip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/pill_bg"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:focusable="false"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/stripFajr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Subuh --:--"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="@font/outfit_regular" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="12dp"
+                android:background="#33FFFFFF"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp" />
+
+            <TextView
+                android:id="@+id/stripDhuhr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dzuhur --:--"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="@font/outfit_regular" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="12dp"
+                android:background="#33FFFFFF"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp" />
+
+            <TextView
+                android:id="@+id/stripAsr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ashar --:--"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="@font/outfit_regular" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="12dp"
+                android:background="#33FFFFFF"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp" />
+
+            <TextView
+                android:id="@+id/stripMaghrib"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Maghrib --:--"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="@font/outfit_regular" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="12dp"
+                android:background="#33FFFFFF"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp" />
+
+            <TextView
+                android:id="@+id/stripIsha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Isya --:--"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="@font/outfit_regular" />
+
+            <TextView
+                android:id="@+id/stripCountdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:textColor="#FFFFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="@font/outfit_medium" />
+        </LinearLayout>
+
         <!-- The wrapper clips at the grid's edge; the grid itself must not clip so scaled tiles can overflow their cells. -->
         <FrameLayout
             android:layout_width="match_parent"
