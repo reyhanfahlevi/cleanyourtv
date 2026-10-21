@@ -279,7 +279,12 @@ final class Config {
         if (wallpapers.isEmpty() && wallpaper != null) wallpapers.add(wallpaper);
         // An on-TV wallpaper pick overrides the theme: a filename from the wallpapers/
         // collection, or "none". Unset means the theme decides (off by default).
-        String wallpaperChoice = choices.getString(WALLPAPER_CHOICE_KEY, null);
+        String wallpaperChoice = json != null && json.has("wallpaper_choice") && !json.isNull("wallpaper_choice")
+                ? json.optString("wallpaper_choice", null)
+                : choices.getString(WALLPAPER_CHOICE_KEY, null);
+        if ("auto".equalsIgnoreCase(wallpaperChoice) || "".equals(wallpaperChoice)) {
+            wallpaperChoice = null;
+        }
         if ("none".equals(wallpaperChoice)) {
             wallpapers.clear();
             wallpaper = null;
@@ -351,11 +356,11 @@ final class Config {
             // explicit theme push or reset by the updated tools.
             SharedPreferences.Editor editor = choices.edit();
             if (!"absent".equals(token)) editor.remove("animations")
-                    .remove("advanced_effects").remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY);
+                    .remove("advanced_effects").remove(ROWS_BELOW_DOCK_KEY);
             editor.putString(THEME_SIGNATURE_KEY, signature).commit();
         } else if (!seen.equals(signature)) {
             choices.edit().remove("animations").remove("advanced_effects")
-                    .remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY)
+                    .remove(ROWS_BELOW_DOCK_KEY)
                     .putString(THEME_SIGNATURE_KEY, signature).commit();
         }
     }

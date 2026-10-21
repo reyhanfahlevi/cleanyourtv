@@ -163,6 +163,8 @@ public class TvHubServer extends NanoHTTPD {
                 return handleGetWallpapers();
             } else if ("/api/wallpaper/file".equals(uri) && Method.GET.equals(method)) {
                 return handleGetWallpaperFile(session);
+            } else if ("/api/wallpaper/active".equals(uri) && (Method.POST.equals(method) || Method.PUT.equals(method))) {
+                return handleActiveWallpaper(session);
             } else if ("/api/wallpaper".equals(uri) && Method.POST.equals(method)) {
                 return handlePostWallpaper(session);
             } else if ("/api/wallpaper".equals(uri) && Method.DELETE.equals(method)) {
@@ -230,15 +232,19 @@ public class TvHubServer extends NanoHTTPD {
     private Response handleGetConfig() throws Exception {
         File themeDir = Config.dir(activity);
         File configFile = themeDir != null ? new File(themeDir, Config.FILE_NAME) : null;
+        JSONObject json = new JSONObject();
         if (configFile != null && configFile.exists()) {
             try (FileInputStream in = new FileInputStream(configFile)) {
                 byte[] b = new byte[(int) configFile.length()];
                 int read = in.read(b);
                 String str = new String(b, 0, read, StandardCharsets.UTF_8);
-                return jsonResponse(Response.Status.OK, new JSONObject(str));
+                json = new JSONObject(str);
             }
         }
-        return jsonResponse(Response.Status.OK, new JSONObject());
+        android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+        String currentWp = choices.getString(Config.WALLPAPER_CHOICE_KEY, "auto");
+        json.put("wallpaper_choice", currentWp == null ? "auto" : currentWp);
+        return jsonResponse(Response.Status.OK, json);
     }
 
     private Response handlePostConfig(IHTTPSession session) throws Exception {
@@ -250,6 +256,16 @@ public class TvHubServer extends NanoHTTPD {
         }
 
         JSONObject json = new JSONObject(postData);
+
+        if (json.has("wallpaper_choice")) {
+            String wc = json.optString("wallpaper_choice", null);
+            android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+            if (wc == null || "auto".equalsIgnoreCase(wc) || wc.isEmpty()) {
+                choices.edit().remove(Config.WALLPAPER_CHOICE_KEY).apply();
+            } else {
+                choices.edit().putString(Config.WALLPAPER_CHOICE_KEY, wc).apply();
+            }
+        }
 
         File themeDir = Config.dir(activity);
         if (themeDir == null) {
@@ -315,8 +331,46 @@ public class TvHubServer extends NanoHTTPD {
                 }
             }
         }
+        android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+        String currentChoice = choices.getString(Config.WALLPAPER_CHOICE_KEY, "auto");
         JSONObject res = new JSONObject();
         res.put("wallpapers", array);
+        res.put("active_wallpaper", currentChoice == null ? "auto" : currentChoice);
+        return jsonResponse(Response.Status.OK, res);
+    }
+
+    private Response handleActiveWallpaper(IHTTPSession session) throws Exception {
+        Map<String, List<String>> params = session.getParameters();
+        String name = null;
+        if (params.containsKey("name") && !params.get("name").isEmpty()) {
+            name = params.get("name").get(0);
+        } else {
+            Map<String, String> body = new HashMap<>();
+            session.parseBody(body);
+            String postData = body.get("postData");
+            if (postData != null && !postData.trim().isEmpty()) {
+                JSONObject json = new JSONObject(postData);
+                name = json.optString("name", null);
+            }
+        }
+
+        android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+        if (name == null || name.isEmpty() || "auto".equalsIgnoreCase(name) || "default".equalsIgnoreCase(name)) {
+            choices.edit().remove(Config.WALLPAPER_CHOICE_KEY).apply();
+            name = "auto";
+        } else {
+            choices.edit().putString(Config.WALLPAPER_CHOICE_KEY, name).apply();
+        }
+
+        activity.runOnUiThread(() -> {
+            try {
+                activity.recreate();
+            } catch (Exception ignored) {}
+        });
+
+        JSONObject res = new JSONObject();
+        res.put("status", "ok");
+        res.put("active_wallpaper", name);
         return jsonResponse(Response.Status.OK, res);
     }
 
