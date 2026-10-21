@@ -373,6 +373,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     stripCountdown.setVisibility(View.GONE);
                 }
             }
+            updateAboveDockWidgetPosition(grid != null ? grid.getPaddingTop() : 0);
             return;
         }
 
@@ -408,6 +409,40 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         if (targetTitle != null && title != null) targetTitle.setText(title);
         if (targetSubtitle != null && subtitle != null) targetSubtitle.setText(subtitle);
+        updateAboveDockWidgetPosition(grid != null ? grid.getPaddingTop() : 0);
+    }
+
+    private void updateAboveDockWidgetPosition(int paddingTop) {
+        if (paddingTop <= 0 && grid != null) {
+            paddingTop = grid.getPaddingTop();
+        }
+        if (paddingTop <= 0) return;
+
+        final int pt = paddingTop;
+        Runnable apply = () -> {
+            View[] widgets = {prayerWidgetAboveDock, prayerFullStrip};
+            for (View w : widgets) {
+                if (w != null) {
+                    String pos = prayerWidgetConfig != null && prayerWidgetConfig.position != null ? prayerWidgetConfig.position : "header_left";
+                    boolean isAboveDock = "above_dock".equals(pos);
+                    if (isAboveDock && w.getVisibility() == View.VISIBLE) {
+                        int h = w.getHeight() > 0 ? w.getHeight() : (int) (38 * density);
+                        float targetY = pt - (16 * density) - h;
+                        android.util.Log.i("TvHomePrayer", "Setting above_dock targetY=" + targetY + " pt=" + pt + " h=" + h + " density=" + density);
+                        w.setTranslationY(Math.max(0, targetY));
+                        w.bringToFront();
+                    } else if (!isAboveDock) {
+                        w.setTranslationY(0f);
+                    }
+                }
+            }
+        };
+
+        if (grid != null) {
+            grid.post(apply);
+        } else {
+            apply.run();
+        }
     }
 
     public void onWallpaperChanged(String name) {
@@ -626,6 +661,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (grid.getPaddingTop() != want) {
                 grid.setPadding(grid.getPaddingLeft(), want, grid.getPaddingRight(), grid.getPaddingBottom());
             }
+            updateAboveDockWidgetPosition(want);
             // Cold start or column count > 4: the first focus can run before the grid has its final width or
             // padding, leaving the glass at the XML design size until a key is pressed.
             grid.post(this::refitGlass);
@@ -639,6 +675,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 glassTargetY -= dy;
                 glassScrollShift -= dy;
                 glass.setTranslationY(glass.getTranslationY() - dy);
+
+                // When grid scrolls down into apps (glassScrollShift is negative), fade out above-dock widgets smoothly
+                float shift = Math.abs(glassScrollShift);
+                float alpha = shift < (10 * density) ? 1.0f : Math.max(0f, 1.0f - (shift - 10 * density) / (40f * density));
+                if (prayerWidgetAboveDock != null && prayerWidgetAboveDock.getVisibility() == View.VISIBLE) {
+                    prayerWidgetAboveDock.setAlpha(alpha);
+                }
+                if (prayerFullStrip != null && prayerFullStrip.getVisibility() == View.VISIBLE) {
+                    prayerFullStrip.setAlpha(alpha);
+                }
             }
         });
 

@@ -407,147 +407,15 @@
             </LinearLayout>
         </RelativeLayout>
 
-        <LinearLayout
-            android:id="@+id/prayerWidgetAboveDock"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="6dp"
-            android:layout_marginBottom="4dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/pill_bg"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
-            android:focusable="false"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/prayerTitleAboveDock"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFFFF"
-                android:textSize="14sp"
-                android:fontFamily="@font/outfit_medium" />
-
-            <TextView
-                android:id="@+id/prayerSubtitleAboveDock"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:textColor="#B3FFFFFF"
-                android:textSize="13sp"
-                android:fontFamily="@font/outfit_regular" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/prayerFullStrip"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="6dp"
-            android:layout_marginBottom="4dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/pill_bg"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
-            android:focusable="false"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/stripFajr"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Fajr --:--"
-                android:textColor="#B3FFFFFF"
-                android:textSize="12sp"
-                android:fontFamily="@font/outfit_regular" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="12dp"
-                android:background="#33FFFFFF"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="10dp" />
-
-            <TextView
-                android:id="@+id/stripDhuhr"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Dhuhr --:--"
-                android:textColor="#B3FFFFFF"
-                android:textSize="12sp"
-                android:fontFamily="@font/outfit_regular" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="12dp"
-                android:background="#33FFFFFF"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="10dp" />
-
-            <TextView
-                android:id="@+id/stripAsr"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Asr --:--"
-                android:textColor="#B3FFFFFF"
-                android:textSize="12sp"
-                android:fontFamily="@font/outfit_regular" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="12dp"
-                android:background="#33FFFFFF"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="10dp" />
-
-            <TextView
-                android:id="@+id/stripMaghrib"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Maghrib --:--"
-                android:textColor="#B3FFFFFF"
-                android:textSize="12sp"
-                android:fontFamily="@font/outfit_regular" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="12dp"
-                android:background="#33FFFFFF"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="10dp" />
-
-            <TextView
-                android:id="@+id/stripIsha"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Isha --:--"
-                android:textColor="#B3FFFFFF"
-                android:textSize="12sp"
-                android:fontFamily="@font/outfit_regular" />
-
-            <TextView
-                android:id="@+id/stripCountdown"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:textColor="#FFFFFFFF"
-                android:textSize="12sp"
-                android:fontFamily="@font/outfit_medium" />
-        </LinearLayout>
-
         <!-- The wrapper clips at the grid's edge; the grid itself must not clip so scaled tiles can overflow their cells. -->
         <FrameLayout
+            android:id="@+id/gridWrapper"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="10dp">
+            android:layout_marginTop="10dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/grid"
@@ -560,6 +428,137 @@
                 android:overScrollMode="never"
                 android:scrollbars="none"
                 android:descendantFocusability="afterDescendants" />
+
+            <LinearLayout
+                android:id="@+id/prayerWidgetAboveDock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal|top"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/pill_bg"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:focusable="false"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/prayerTitleAboveDock"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/outfit_medium" />
+
+                <TextView
+                    android:id="@+id/prayerSubtitleAboveDock"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/outfit_regular" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/prayerFullStrip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal|top"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/pill_bg"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:focusable="false"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/stripFajr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fajr --:--"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_regular" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="12dp"
+                    android:background="#33FFFFFF"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp" />
+
+                <TextView
+                    android:id="@+id/stripDhuhr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Dhuhr --:--"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_regular" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="12dp"
+                    android:background="#33FFFFFF"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp" />
+
+                <TextView
+                    android:id="@+id/stripAsr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Asr --:--"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_regular" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="12dp"
+                    android:background="#33FFFFFF"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp" />
+
+                <TextView
+                    android:id="@+id/stripMaghrib"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Maghrib --:--"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_regular" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="12dp"
+                    android:background="#33FFFFFF"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp" />
+
+                <TextView
+                    android:id="@+id/stripIsha"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Isha --:--"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_regular" />
+
+                <TextView
+                    android:id="@+id/stripCountdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_medium" />
+            </LinearLayout>
         </FrameLayout>
     </LinearLayout>
 
