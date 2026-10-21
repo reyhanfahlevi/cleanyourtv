@@ -341,6 +341,39 @@
                 android:clipToPadding="false"
                 android:orientation="horizontal">
 
+                <LinearLayout
+                    android:id="@+id/prayerWidgetRight"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/pill_bg"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"
+                    android:focusable="false"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/prayerTitleRight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/outfit_medium" />
+
+                    <TextView
+                        android:id="@+id/prayerSubtitleRight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/outfit_regular" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/btnInputs"
                     style="@style/TopButton"
@@ -373,6 +406,41 @@
                     android:nextFocusDown="@+id/grid" />
             </LinearLayout>
         </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/prayerWidgetAboveDock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/pill_bg"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:focusable="false"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/prayerTitleAboveDock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFFFF"
+                android:textSize="14sp"
+                android:fontFamily="@font/outfit_medium" />
+
+            <TextView
+                android:id="@+id/prayerSubtitleAboveDock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:textColor="#B3FFFFFF"
+                android:textSize="13sp"
+                android:fontFamily="@font/outfit_regular" />
+        </LinearLayout>
 
         <!-- The wrapper clips at the grid's edge; the grid itself must not clip so scaled tiles can overflow their cells. -->
         <FrameLayout

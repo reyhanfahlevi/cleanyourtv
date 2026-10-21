@@ -143,8 +143,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView btnWifi;
     private TextView shamsiDate;
     private TextView stats;
-    private View prayerWidget;
+    private View prayerWidget, prayerWidgetRight, prayerWidgetAboveDock;
     private TextView prayerTitle, prayerSubtitle;
+    private TextView prayerTitleRight, prayerSubtitleRight;
+    private TextView prayerTitleAboveDock, prayerSubtitleAboveDock;
     private Config.PrayerWidget prayerWidgetConfig;
     private List<RaceWeekend.Race> raceCalendar;
     private View racePanel;
@@ -291,12 +293,41 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     };
 
     private void updatePrayerWidget() {
-        if (prayerWidget == null || prayerWidgetConfig == null || !prayerWidgetConfig.enabled) {
+        if (prayerWidgetConfig == null || !prayerWidgetConfig.enabled) {
             if (prayerWidget != null) prayerWidget.setVisibility(View.GONE);
+            if (prayerWidgetRight != null) prayerWidgetRight.setVisibility(View.GONE);
+            if (prayerWidgetAboveDock != null) prayerWidgetAboveDock.setVisibility(View.GONE);
             return;
         }
 
-        prayerWidget.setVisibility(View.VISIBLE);
+        String pos = prayerWidgetConfig.position != null ? prayerWidgetConfig.position : "header_left";
+
+        View targetWidget;
+        TextView targetTitle;
+        TextView targetSubtitle;
+
+        if ("header_right".equals(pos)) {
+            targetWidget = prayerWidgetRight;
+            targetTitle = prayerTitleRight;
+            targetSubtitle = prayerSubtitleRight;
+            if (prayerWidget != null) prayerWidget.setVisibility(View.GONE);
+            if (prayerWidgetAboveDock != null) prayerWidgetAboveDock.setVisibility(View.GONE);
+        } else if ("above_dock".equals(pos)) {
+            targetWidget = prayerWidgetAboveDock;
+            targetTitle = prayerTitleAboveDock;
+            targetSubtitle = prayerSubtitleAboveDock;
+            if (prayerWidget != null) prayerWidget.setVisibility(View.GONE);
+            if (prayerWidgetRight != null) prayerWidgetRight.setVisibility(View.GONE);
+        } else {
+            targetWidget = prayerWidget;
+            targetTitle = prayerTitle;
+            targetSubtitle = prayerSubtitle;
+            if (prayerWidgetRight != null) prayerWidgetRight.setVisibility(View.GONE);
+            if (prayerWidgetAboveDock != null) prayerWidgetAboveDock.setVisibility(View.GONE);
+        }
+
+        if (targetWidget == null) return;
+        targetWidget.setVisibility(View.VISIBLE);
 
         String title = prayerWidgetConfig.title;
         String subtitle = prayerWidgetConfig.subtitle;
@@ -335,8 +366,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
         } catch (Exception ignored) {}
 
-        if (prayerTitle != null && title != null) prayerTitle.setText(title);
-        if (prayerSubtitle != null && subtitle != null) prayerSubtitle.setText(subtitle);
+        if (targetTitle != null && title != null) targetTitle.setText(title);
+        if (targetSubtitle != null && subtitle != null) targetSubtitle.setText(subtitle);
     }
 
     public void onWallpaperChanged(String name) {
@@ -426,6 +457,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         prayerWidget = findViewById(R.id.prayerWidget);
         prayerTitle = findViewById(R.id.prayerTitle);
         prayerSubtitle = findViewById(R.id.prayerSubtitle);
+
+        prayerWidgetRight = findViewById(R.id.prayerWidgetRight);
+        prayerTitleRight = findViewById(R.id.prayerTitleRight);
+        prayerSubtitleRight = findViewById(R.id.prayerSubtitleRight);
+
+        prayerWidgetAboveDock = findViewById(R.id.prayerWidgetAboveDock);
+        prayerTitleAboveDock = findViewById(R.id.prayerTitleAboveDock);
+        prayerSubtitleAboveDock = findViewById(R.id.prayerSubtitleAboveDock);
+
         prayerWidgetConfig = cfg.prayerWidget;
         updatePrayerWidget();
         raceCalendar = cfg.raceCalendar;
