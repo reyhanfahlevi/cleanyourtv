@@ -306,7 +306,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         boolean isFullMode = "full".equals(prayerWidgetConfig.mode) || "full_strip".equals(pos);
 
         java.time.LocalTime now = java.time.LocalTime.now();
-        String[] names = {"Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"};
+        String[] names = {"Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"};
         String[] times = {
                 prayerWidgetConfig.fajr,
                 prayerWidgetConfig.dhuhr,
@@ -340,9 +340,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         if (nextTime != null) {
             long diffMinutes = java.time.Duration.between(now, nextTime).toMinutes();
-            countdown = diffMinutes < 60 ? diffMinutes + "m" : (diffMinutes / 60) + "j " + (diffMinutes % 60) + "m";
+            countdown = diffMinutes < 60 ? diffMinutes + "m" : (diffMinutes / 60) + "h " + (diffMinutes % 60) + "m";
             title = "🕌 " + nextName + " " + String.format(java.util.Locale.US, "%02d:%02d", nextTime.getHour(), nextTime.getMinute());
-            subtitle = "(" + countdown + " lagi)" + (prayerWidgetConfig.city.isEmpty() ? "" : " • " + prayerWidgetConfig.city);
+            subtitle = "(" + countdown + " left)" + (prayerWidgetConfig.city.isEmpty() ? "" : " • " + prayerWidgetConfig.city);
         }
 
         if (isFullMode && prayerFullStrip != null) {
