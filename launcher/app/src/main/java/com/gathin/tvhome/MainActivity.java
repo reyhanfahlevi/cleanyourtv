@@ -273,11 +273,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
     };
     // Right after boot the clock is often wrong until network time arrives; don't wait a minute to catch up.
-    private final IntentFilter timeFilter = new IntentFilter(Intent.ACTION_TIME_CHANGED);
+    private final IntentFilter timeFilter = new IntentFilter() {{
+        addAction(Intent.ACTION_TIME_TICK);
+        addAction(Intent.ACTION_TIME_CHANGED);
+        addAction(Intent.ACTION_TIMEZONE_CHANGED);
+    }};
     private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             updateClockVisibility();
+            updatePrayerWidget();
         }
     };
     private final Runnable minuteTick = new Runnable() {
@@ -317,7 +322,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         java.time.LocalTime nextTime = null;
         String nextName = null;
-        int nextIndex = 0;
+        int nextIndex = -1;
 
         try {
             for (int i = 0; i < times.length; i++) {
@@ -339,10 +344,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         String subtitle = prayerWidgetConfig.subtitle;
 
         if (nextTime != null) {
-            long diffMinutes = java.time.Duration.between(now, nextTime).toMinutes();
+            long diffMinutes = Math.max(0, java.time.Duration.between(now, nextTime).toMinutes());
             countdown = diffMinutes < 60 ? diffMinutes + "m" : (diffMinutes / 60) + "h " + (diffMinutes % 60) + "m";
             title = "🕌 " + nextName + " " + String.format(java.util.Locale.US, "%02d:%02d", nextTime.getHour(), nextTime.getMinute());
             subtitle = "(" + countdown + " left)" + (prayerWidgetConfig.city.isEmpty() ? "" : " • " + prayerWidgetConfig.city);
+        } else if (times[0] != null && times[0].contains(":")) {
+            // After Isha: next upcoming prayer is tomorrow's Fajr
+            try {
+                String[] parts = times[0].split(":");
+                java.time.LocalTime fajrTime = java.time.LocalTime.of(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+                nextName = names[0];
+                nextIndex = 0;
+                long minutesUntilMidnight = java.time.Duration.between(now, java.time.LocalTime.MAX).toMinutes() + 1;
+                long minutesFromMidnightToFajr = java.time.Duration.between(java.time.LocalTime.MIN, fajrTime).toMinutes();
+                long diffMinutes = Math.max(0, minutesUntilMidnight + minutesFromMidnightToFajr);
+                countdown = diffMinutes < 60 ? diffMinutes + "m" : (diffMinutes / 60) + "h " + (diffMinutes % 60) + "m";
+                title = "🕌 Fajr " + String.format(java.util.Locale.US, "%02d:%02d", fajrTime.getHour(), fajrTime.getMinute());
+                subtitle = "(" + countdown + " left)" + (prayerWidgetConfig.city.isEmpty() ? "" : " • " + prayerWidgetConfig.city);
+            } catch (Exception ignored) {}
         }
 
         if (isFullMode && prayerFullStrip != null) {
@@ -861,9 +880,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         updateRace();
         updateWifiLabel();
         updateInputsButton();
+        updatePrayerWidget();
         if (showStats) startStats();
         sky.update();
         wallpaperPlayer.start();
+        handler.removeCallbacks(minuteTick);
         handler.postDelayed(minuteTick, MINUTE_MS);
         if (festive && diya != null) {
             diya.start();
