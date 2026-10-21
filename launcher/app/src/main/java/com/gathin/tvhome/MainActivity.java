@@ -413,26 +413,36 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void updateAboveDockWidgetPosition(int paddingTop) {
-        if (paddingTop <= 0 && grid != null) {
-            paddingTop = grid.getPaddingTop();
-        }
-        if (paddingTop <= 0) return;
-
-        final int pt = paddingTop;
         Runnable apply = () -> {
             View[] widgets = {prayerWidgetAboveDock, prayerFullStrip};
+            View firstDockTile = (grid != null && grid.getLayoutManager() != null) 
+                    ? grid.getLayoutManager().findViewByPosition(0) 
+                    : null;
+
+            float dockTop;
+            if (firstDockTile != null) {
+                dockTop = firstDockTile.getTop();
+            } else if (paddingTop > 0) {
+                dockTop = paddingTop;
+            } else if (grid != null && grid.getPaddingTop() > 0) {
+                dockTop = grid.getPaddingTop();
+            } else {
+                dockTop = 0f;
+            }
+
             for (View w : widgets) {
                 if (w != null) {
                     String pos = prayerWidgetConfig != null && prayerWidgetConfig.position != null ? prayerWidgetConfig.position : "header_left";
                     boolean isAboveDock = "above_dock".equals(pos);
                     if (isAboveDock && w.getVisibility() == View.VISIBLE) {
                         int h = w.getHeight() > 0 ? w.getHeight() : (int) (38 * density);
-                        float targetY = pt - (16 * density) - h;
-                        android.util.Log.i("TvHomePrayer", "Setting above_dock targetY=" + targetY + " pt=" + pt + " h=" + h + " density=" + density);
+                        float targetY = dockTop - (14 * density) - h;
+                        // Clamped to 0 so it sticks against the status bar when scrolling down, never overflowing
+                        float clampedY = Math.max(0f, targetY);
                         w.setAlpha(1.0f);
                         w.setElevation(20f * density);
                         w.setZ(20f * density);
-                        w.setTranslationY(Math.max(0, targetY));
+                        w.setTranslationY(clampedY);
                         w.bringToFront();
                     } else if (!isAboveDock) {
                         w.setAlpha(1.0f);
@@ -675,10 +685,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         grid.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
-                if (!glassShown) return;
-                glassTargetY -= dy;
-                glassScrollShift -= dy;
-                glass.setTranslationY(glass.getTranslationY() - dy);
+                if (glassShown) {
+                    glassTargetY -= dy;
+                    glassScrollShift -= dy;
+                    glass.setTranslationY(glass.getTranslationY() - dy);
+                }
+
+                // Dynamically update above-dock widget position on scroll (follows dock and clamps to status bar)
+                if (dy != 0) {
+                    updateAboveDockWidgetPosition(0);
+                }
             }
         });
 
@@ -1459,6 +1475,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 else grid.smoothScrollBy(0, dy);
             }
             showHero(position, scroll ? r.top - dy : r.top);
+            updateAboveDockWidgetPosition(0);
         } else {
             // Below the dock (or in a plain grid) the glow follows the tile without the big name; letting it
             // fade out left the grid on plain black.
