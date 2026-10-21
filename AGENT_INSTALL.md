@@ -77,8 +77,8 @@ The launcher APK (`com.gathin.tvhome`) includes an embedded HTTP server (Port 80
 ### 3.1 Download & Install the APK
 Download the precompiled APK directly from GitHub Releases:
 ```bash
-# Download precompiled APK
-curl -L -o app-release.apk https://github.com/reyhanfahlevi/cleanyourtv/releases/download/v1.0.0/app-release.apk
+# Download latest precompiled APK (Auto-Wake & Accessibility Intercept)
+curl -L -o app-release.apk https://github.com/reyhanfahlevi/cleanyourtv/releases/latest/download/app-release.apk
 
 # Install to TV
 adb -s <TV_IP>:5555 install -r app-release.apk
