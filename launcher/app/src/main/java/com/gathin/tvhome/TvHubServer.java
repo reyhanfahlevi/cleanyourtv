@@ -354,18 +354,56 @@ public class TvHubServer extends NanoHTTPD {
             }
         }
 
-        android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
         if (name == null || name.isEmpty() || "auto".equalsIgnoreCase(name) || "default".equalsIgnoreCase(name)) {
-            choices.edit().remove(Config.WALLPAPER_CHOICE_KEY).apply();
             name = "auto";
+        }
+
+        // 1. Persist directly into config.json
+        File themeDir = Config.dir(activity);
+        if (themeDir != null) {
+            File configFile = new File(themeDir, Config.FILE_NAME);
+            if (configFile.exists()) {
+                try {
+                    JSONObject merged = new JSONObject();
+                    try (FileInputStream in = new FileInputStream(configFile)) {
+                        byte[] b = new byte[(int) configFile.length()];
+                        int read = in.read(b);
+                        merged = new JSONObject(new String(b, 0, read, StandardCharsets.UTF_8));
+                    }
+                    if ("auto".equals(name)) {
+                        merged.remove("wallpaper_choice");
+                    } else {
+                        merged.put("wallpaper_choice", name);
+                    }
+                    try (FileOutputStream out = new FileOutputStream(configFile)) {
+                        out.write(merged.toString(2).getBytes(StandardCharsets.UTF_8));
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+
+        // 2. Persist into choices SharedPreferences
+        android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+        if ("auto".equals(name)) {
+            choices.edit().remove(Config.WALLPAPER_CHOICE_KEY).apply();
         } else {
             choices.edit().putString(Config.WALLPAPER_CHOICE_KEY, name).apply();
         }
 
+        // 3. Reset wallpaper rotation state so current rotation timestamp doesn't delay update
+        android.content.SharedPreferences rotPrefs = activity.getSharedPreferences("wallpaper_rotation", android.content.Context.MODE_PRIVATE);
+        rotPrefs.edit().remove("image").remove("changed").apply();
+
+        // 4. Update wallpaper live on MainActivity
+        final String finalName = name;
         activity.runOnUiThread(() -> {
             try {
-                activity.recreate();
-            } catch (Exception ignored) {}
+                activity.onWallpaperChanged(finalName);
+            } catch (Exception e) {
+                try {
+                    activity.recreate();
+                } catch (Exception ignored) {}
+            }
         });
 
         JSONObject res = new JSONObject();

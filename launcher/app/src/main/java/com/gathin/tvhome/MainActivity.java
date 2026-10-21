@@ -286,6 +286,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
     };
 
+    public void onWallpaperChanged(String name) {
+        runOnUiThread(() -> {
+            try {
+                Config cfg = Config.load(this);
+                if (wallpaperPlayer != null) {
+                    wallpaperPlayer.close();
+                }
+                wallpaperPlayer = new WallpaperPlayer(this, root, cfg);
+                wallpaperPlayer.start();
+            } catch (Exception e) {
+                recreate();
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

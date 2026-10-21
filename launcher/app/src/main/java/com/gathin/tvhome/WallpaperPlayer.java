@@ -33,6 +33,7 @@ final class WallpaperPlayer {
     private boolean closed;
     private boolean loading;
     private String displayed = "";
+    private View shade;
 
     WallpaperPlayer(Context context, FrameLayout root, Config config) {
         this.root = root;
@@ -50,7 +51,7 @@ final class WallpaperPlayer {
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             // No shade layer at all when the theme doesn't dim: a full-screen view is overdraw on 1 GB TVs.
             if (config.wallpaperDim > 0) {
-                View shade = new View(context);
+                shade = new View(context);
                 shade.setBackgroundColor((config.wallpaperDim * 255 / 100) << 24);
                 shade.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
                 root.addView(shade, 1, new FrameLayout.LayoutParams(
@@ -98,6 +99,13 @@ final class WallpaperPlayer {
         active = false;
         closed = true;
         decoder.shutdownNow();
+        if (root != null) {
+            root.removeView(image);
+            if (shade != null) {
+                root.removeView(shade);
+                shade = null;
+            }
+        }
     }
 
     void update() {
