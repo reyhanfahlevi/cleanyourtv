@@ -2,6 +2,15 @@
   <a href="https://cleanyour.tv"><img src="https://raw.githubusercontent.com/Gathin23/cleanyourtv/main/docs/banner.png" alt="CleanYourTV. Your TV, minus the ads. Strip the bloatware from any Android TV or Google TV over Wi-Fi and replace the ad-filled home screen with a clean launcher that looks like an Apple TV. No root, no cable, nothing uninstalled, and a one-line restore." width="800"></a>
 </p>
 
+> [!TIP]
+> ### 🌟 What's New in This Fork (`reyhanfahlevi/cleanyourtv`):
+> This fork transforms the CleanYourTV launcher into a connected smart device managed wirelessly by **[tvhub](https://github.com/reyhanfahlevi/tvhub)** (centralized web dashboard):
+> - 📡 **Embedded REST API (Port 8080)**: Control TV volume, settings, wallpaper, navigation, and launch apps over HTTP without ADB.
+> - 🔍 **Native mDNS Auto-Discovery**: Broadcasts `_tvhub._tcp.` so `tvhub` detects TVs on the Wi-Fi network with zero configuration.
+> - 🪟 **tvOS / Apple TV Glassmorphic Dock**: Frosted charcoal glass styling with specular rim highlight and dynamic opacity control (0–100%).
+> - 📦 **Ready-to-Install APK**: Precompiled APK available directly in [GitHub Releases](https://github.com/reyhanfahlevi/cleanyourtv/releases/tag/v1.0.0).
+> - 🤖 **AI Agent Friendly**: Includes [AGENT_INSTALL.md](./AGENT_INSTALL.md) for automated execution by AI assistants (Antigravity, Claude Code, Cursor).
+
 <p align="center">
   <a href="https://github.com/Gathin23/cleanyourtv/stargazers"><img src="https://img.shields.io/github/stars/Gathin23/cleanyourtv?style=flat&cacheSeconds=1800&color=cfffcf&labelColor=15181e" alt="Stars"></a>
   <a href="https://github.com/Gathin23/cleanyourtv/pulls?q=is%3Amerged"><img src="https://img.shields.io/github/issues-pr-closed/Gathin23/cleanyourtv?style=flat&cacheSeconds=1800&label=merged%20PRs&color=cfffcf&labelColor=15181e" alt="Merged PRs"></a>
