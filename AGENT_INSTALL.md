@@ -74,10 +74,14 @@ adb -s <TV_IP>:5555 shell "pm disable-user --user 0 com.coocaa.mall"
 
 The launcher APK (`com.gathin.tvhome`) includes an embedded HTTP server (Port 8080) and mDNS broadcaster (`_tvhub._tcp.`) for real-time control via `tvhub`.
 
-### 3.1 Install the APK
-Download or use the precompiled APK from `cleanyourtv`:
+### 3.1 Download & Install the APK
+Download the precompiled APK directly from GitHub Releases:
 ```bash
-adb -s <TV_IP>:5555 install -r launcher/app/build/outputs/apk/release/app-release.apk
+# Download precompiled APK
+curl -L -o app-release.apk https://github.com/reyhanfahlevi/cleanyourtv/releases/download/v1.0.0/app-release.apk
+
+# Install to TV
+adb -s <TV_IP>:5555 install -r app-release.apk
 ```
 *(Alternative for stubborn TV adbd: push via base64 chunker `python3 tools/b64push.py <apk> /data/local/tmp/app.apk && adb shell pm install -r /data/local/tmp/app.apk`).*
 
