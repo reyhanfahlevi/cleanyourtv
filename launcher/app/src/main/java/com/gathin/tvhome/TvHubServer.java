@@ -161,6 +161,8 @@ public class TvHubServer extends NanoHTTPD {
                 return handlePostConfig(session);
             } else if ("/api/wallpapers".equals(uri) && Method.GET.equals(method)) {
                 return handleGetWallpapers();
+            } else if ("/api/wallpaper/file".equals(uri) && Method.GET.equals(method)) {
+                return handleGetWallpaperFile(session);
             } else if ("/api/wallpaper".equals(uri) && Method.POST.equals(method)) {
                 return handlePostWallpaper(session);
             } else if ("/api/wallpaper".equals(uri) && Method.DELETE.equals(method)) {
@@ -307,6 +309,7 @@ public class TvHubServer extends NanoHTTPD {
                         JSONObject item = new JSONObject();
                         item.put("name", f.getName());
                         item.put("size_bytes", f.length());
+                        item.put("url", "/api/wallpaper/file?name=" + java.net.URLEncoder.encode(f.getName(), "UTF-8"));
                         array.put(item);
                     }
                 }
@@ -315,6 +318,27 @@ public class TvHubServer extends NanoHTTPD {
         JSONObject res = new JSONObject();
         res.put("wallpapers", array);
         return jsonResponse(Response.Status.OK, res);
+    }
+
+    private Response handleGetWallpaperFile(IHTTPSession session) throws Exception {
+        Map<String, List<String>> params = session.getParameters();
+        if (!params.containsKey("name") || params.get("name").isEmpty()) {
+            return errorResponse(Response.Status.BAD_REQUEST, "Parameter 'name' required");
+        }
+        String name = params.get("name").get(0);
+
+        File themeDir = Config.dir(activity);
+        File target = themeDir != null ? new File(new File(themeDir, "wallpapers"), name) : null;
+        if (target != null && target.exists() && target.isFile()) {
+            String mime = "image/jpeg";
+            String lower = name.toLowerCase();
+            if (lower.endsWith(".png")) mime = "image/png";
+            else if (lower.endsWith(".webp")) mime = "image/webp";
+
+            FileInputStream fis = new FileInputStream(target);
+            return newFixedLengthResponse(Response.Status.OK, mime, fis, target.length());
+        }
+        return errorResponse(Response.Status.NOT_FOUND, "Wallpaper not found: " + name);
     }
 
     private Response handlePostWallpaper(IHTTPSession session) throws Exception {
