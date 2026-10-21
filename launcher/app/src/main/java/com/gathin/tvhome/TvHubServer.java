@@ -437,6 +437,7 @@ public class TvHubServer extends NanoHTTPD {
             final Intent launchIntent = launch;
             activity.runOnUiThread(() -> {
                 try {
+                    activity.wakeUpScreen();
                     activity.startActivity(launchIntent);
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to launch app: " + pkg, e);

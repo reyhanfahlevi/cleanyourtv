@@ -39,6 +39,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.SpannableString;
@@ -53,6 +54,7 @@ import android.view.View;
 import android.view.SoundEffectConstants;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.FrameLayout;
@@ -287,6 +289,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        } else {
+            getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            );
+        }
         setContentView(R.layout.activity_main);
         density = getResources().getDisplayMetrics().density;
         // config.xml, overlaid by config.json from a pushed theme (see Config and tools/theme.sh).
@@ -847,8 +860,43 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         return super.dispatchKeyEvent(event);   // arrows navigate; OK on a top-bar pill works as usual
     }
 
+    public void wakeUpScreen() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setTurnScreenOn(true);
+            }
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null) {
+                @SuppressWarnings("deprecation")
+                PowerManager.WakeLock wl = pm.newWakeLock(
+                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE,
+                    "cleanyourtv:wake"
+                );
+                wl.acquire(2500);
+            }
+        } catch (Exception ignored) {}
+    }
+
     public void handleRemoteNavigation(String key) {
+        wakeUpScreen();
+
+        if (!hasWindowFocus()) {
+            HomeKeyService.triggerGlobalHome();
+            try {
+                Intent explicit = new Intent(this, MainActivity.class);
+                explicit.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(explicit);
+            } catch (Exception ignored) {}
+            focusTile(0);
+            return;
+        }
+
         if ("home".equals(key)) {
+            // First trigger system-level global HOME if Accessibility Service is active
+            if (HomeKeyService.triggerGlobalHome()) {
+                focusTile(0);
+                return;
+            }
             try {
                 Intent home = new Intent(Intent.ACTION_MAIN)
                         .addCategory(Intent.CATEGORY_HOME)
@@ -864,6 +912,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return;
         }
         if ("back".equals(key)) {
+            if (HomeKeyService.triggerGlobalBack()) {
+                return;
+            }
             onBackPressed();
             return;
         }

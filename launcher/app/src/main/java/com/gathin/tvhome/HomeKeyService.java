@@ -20,6 +20,8 @@ import java.util.Map;
  */
 public class HomeKeyService extends AccessibilityService {
 
+    private static volatile HomeKeyService instance;
+
     /** Remote buttons that should open Settings (config.xml, settings_key_scancodes and settings_key_keycodes). */
     private int[] settingsScancodes = new int[0];
     private int[] settingsKeycodes = new int[0];
@@ -30,12 +32,47 @@ public class HomeKeyService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
+        instance = this;
         settingsScancodes = getResources().getIntArray(R.array.settings_key_scancodes);
         // Keycodes and the panel choice can also come from a theme; theme.sh restarts this service.
         Config config = Config.load(this);
         settingsKeycodes = config.settingsKeycodes;
         settingsPanel = config.settingsKeyPanel;
         appKeys = RemoteKeys.parseAppKeys(config.appKeys);
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        instance = null;
+        return super.onUnbind(intent);
+    }
+
+    @Override
+    public void onDestroy() {
+        instance = null;
+        super.onDestroy();
+    }
+
+    public static HomeKeyService getInstance() {
+        return instance;
+    }
+
+    public static boolean isServiceActive() {
+        return instance != null;
+    }
+
+    public static boolean triggerGlobalHome() {
+        if (instance != null) {
+            return instance.performGlobalAction(GLOBAL_ACTION_HOME);
+        }
+        return false;
+    }
+
+    public static boolean triggerGlobalBack() {
+        if (instance != null) {
+            return instance.performGlobalAction(GLOBAL_ACTION_BACK);
+        }
+        return false;
     }
 
     private boolean isSettingsKey(KeyEvent event) {
