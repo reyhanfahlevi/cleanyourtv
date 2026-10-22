@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
 
 /**
@@ -56,6 +57,25 @@ public class TvHubService extends Service {
         instance = this;
         startForegroundNotification();
         ensureServerStarted();
+        ensureAccessibilityEnabled();
+    }
+
+    private void ensureAccessibilityEnabled() {
+        try {
+            String enabledServices = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            String myService = getPackageName() + "/" + HomeKeyService.class.getName();
+            String myServiceShort = getPackageName() + "/.HomeKeyService";
+            if (enabledServices == null || (!enabledServices.contains(myService) && !enabledServices.contains(myServiceShort))) {
+                String newServices = (enabledServices == null || enabledServices.isEmpty())
+                        ? myServiceShort
+                        : enabledServices + ":" + myServiceShort;
+                Settings.Secure.putString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, newServices);
+                Settings.Secure.putInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+                Log.i(TAG, "Automatically enabled HomeKeyService via WRITE_SECURE_SETTINGS");
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "Cannot auto-enable accessibility: " + e.getMessage());
+        }
     }
 
     private void startForegroundNotification() {

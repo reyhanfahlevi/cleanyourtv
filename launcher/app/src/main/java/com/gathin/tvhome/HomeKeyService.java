@@ -98,15 +98,20 @@ public class HomeKeyService extends AccessibilityService {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) RemoteKeys.launch(this, app);
             return true;
         }
-        if (event.getKeyCode() != KeyEvent.KEYCODE_ALL_APPS) return false;
-        if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
-            Intent home = new Intent(Intent.ACTION_MAIN)
-                    .addCategory(Intent.CATEGORY_HOME)
-                    .setPackage(getPackageName())
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-            startActivity(home);
+        int kc = event.getKeyCode();
+        android.util.Log.d("HomeKeyService", "onKeyEvent: keyCode=" + kc + ", scanCode=" + event.getScanCode() + ", action=" + event.getAction());
+
+        if (kc == KeyEvent.KEYCODE_ALL_APPS || kc == KeyEvent.KEYCODE_HOME) {
+            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                Intent home = new Intent(Intent.ACTION_MAIN)
+                        .addCategory(Intent.CATEGORY_HOME)
+                        .setPackage(getPackageName())
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                startActivity(home);
+            }
+            return true;
         }
-        return true;
+        return false;
     }
 
     @Override
