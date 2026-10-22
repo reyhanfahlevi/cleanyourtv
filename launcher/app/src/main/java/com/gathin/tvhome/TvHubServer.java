@@ -3,6 +3,7 @@ package com.gathin.tvhome;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.nsd.NsdManager;
@@ -40,14 +41,15 @@ public class TvHubServer extends NanoHTTPD {
     public static final int PORT = 8080;
     public static final String SERVICE_TYPE = "_tvhub._tcp.";
 
+    private final Context context;
     private volatile MainActivity activity;
     private NsdManager nsdManager;
     private NsdManager.RegistrationListener nsdListener;
     private boolean isRegistered = false;
 
-    public TvHubServer(MainActivity activity) {
+    public TvHubServer(Context context) {
         super("0.0.0.0", PORT);
-        this.activity = activity;
+        this.context = context.getApplicationContext();
     }
 
     public void updateActivity(MainActivity activity) {
@@ -70,7 +72,7 @@ public class TvHubServer extends NanoHTTPD {
 
     private void registerMdns() {
         try {
-            nsdManager = (NsdManager) activity.getSystemService(Context.NSD_SERVICE);
+            nsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
             if (nsdManager == null) return;
 
             String serviceName = "tvhub-" + Build.MODEL.replaceAll("[^a-zA-Z0-9_-]", "-");
@@ -195,7 +197,7 @@ public class TvHubServer extends NanoHTTPD {
         status.put("uptime_ms", SystemClock.uptimeMillis());
 
         // Memory
-        ActivityManager am = (ActivityManager) activity.getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         if (am != null) {
             ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
             am.getMemoryInfo(mi);
@@ -217,7 +219,7 @@ public class TvHubServer extends NanoHTTPD {
         status.put("storage", storage);
 
         // Wallpaper info
-        File themeDir = Config.dir(activity);
+        File themeDir = Config.dir(context);
         File wallpapersDir = themeDir != null ? new File(themeDir, "wallpapers") : null;
         int wallpaperCount = 0;
         if (wallpapersDir != null && wallpapersDir.exists() && wallpapersDir.isDirectory()) {
@@ -230,7 +232,7 @@ public class TvHubServer extends NanoHTTPD {
     }
 
     private Response handleGetConfig() throws Exception {
-        File themeDir = Config.dir(activity);
+        File themeDir = Config.dir(context);
         File configFile = themeDir != null ? new File(themeDir, Config.FILE_NAME) : null;
         JSONObject json = new JSONObject();
         if (configFile != null && configFile.exists()) {
@@ -241,7 +243,7 @@ public class TvHubServer extends NanoHTTPD {
                 json = new JSONObject(str);
             }
         }
-        android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+        SharedPreferences choices = context.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE);
         String currentWp = choices.getString(Config.WALLPAPER_CHOICE_KEY, "auto");
         json.put("wallpaper_choice", currentWp == null ? "auto" : currentWp);
         return jsonResponse(Response.Status.OK, json);
@@ -259,7 +261,7 @@ public class TvHubServer extends NanoHTTPD {
 
         if (json.has("wallpaper_choice")) {
             String wc = json.optString("wallpaper_choice", null);
-            android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+            SharedPreferences choices = context.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE);
             if (wc == null || "auto".equalsIgnoreCase(wc) || wc.isEmpty()) {
                 choices.edit().remove(Config.WALLPAPER_CHOICE_KEY).apply();
             } else {
@@ -267,7 +269,7 @@ public class TvHubServer extends NanoHTTPD {
             }
         }
 
-        File themeDir = Config.dir(activity);
+        File themeDir = Config.dir(context);
         if (themeDir == null) {
             return errorResponse(Response.Status.INTERNAL_ERROR, "External storage unavailable");
         }
@@ -294,18 +296,21 @@ public class TvHubServer extends NanoHTTPD {
             out.write(merged.toString(2).getBytes(StandardCharsets.UTF_8));
         }
 
-        // Live restart launcher cleanly on UI thread
-        activity.runOnUiThread(() -> {
-            try {
-                activity.recreate();
-            } catch (Exception e) {
+        // Live restart launcher cleanly on UI thread if activity is active
+        MainActivity act = this.activity;
+        if (act != null) {
+            act.runOnUiThread(() -> {
                 try {
-                    Intent intent = activity.getIntent();
-                    activity.finish();
-                    activity.startActivity(intent);
-                } catch (Exception ignored) {}
-            }
-        });
+                    act.recreate();
+                } catch (Exception e) {
+                    try {
+                        Intent intent = act.getIntent();
+                        act.finish();
+                        act.startActivity(intent);
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
 
         JSONObject res = new JSONObject();
         res.put("status", "ok");
@@ -314,7 +319,7 @@ public class TvHubServer extends NanoHTTPD {
     }
 
     private Response handleGetWallpapers() throws Exception {
-        File themeDir = Config.dir(activity);
+        File themeDir = Config.dir(context);
         File dir = themeDir != null ? new File(themeDir, "wallpapers") : null;
         JSONArray array = new JSONArray();
         if (dir != null && dir.exists()) {
@@ -331,7 +336,7 @@ public class TvHubServer extends NanoHTTPD {
                 }
             }
         }
-        android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+        SharedPreferences choices = context.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE);
         String currentChoice = choices.getString(Config.WALLPAPER_CHOICE_KEY, "auto");
         JSONObject res = new JSONObject();
         res.put("wallpapers", array);
@@ -359,7 +364,7 @@ public class TvHubServer extends NanoHTTPD {
         }
 
         // 1. Persist directly into config.json
-        File themeDir = Config.dir(activity);
+        File themeDir = Config.dir(context);
         if (themeDir != null) {
             File configFile = new File(themeDir, Config.FILE_NAME);
             if (configFile.exists()) {
@@ -383,7 +388,7 @@ public class TvHubServer extends NanoHTTPD {
         }
 
         // 2. Persist into choices SharedPreferences
-        android.content.SharedPreferences choices = activity.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE);
+        SharedPreferences choices = context.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE);
         if ("auto".equals(name)) {
             choices.edit().remove(Config.WALLPAPER_CHOICE_KEY).apply();
         } else {
@@ -391,20 +396,23 @@ public class TvHubServer extends NanoHTTPD {
         }
 
         // 3. Reset wallpaper rotation state so current rotation timestamp doesn't delay update
-        android.content.SharedPreferences rotPrefs = activity.getSharedPreferences("wallpaper_rotation", android.content.Context.MODE_PRIVATE);
+        SharedPreferences rotPrefs = context.getSharedPreferences("wallpaper_rotation", Context.MODE_PRIVATE);
         rotPrefs.edit().remove("image").remove("changed").apply();
 
-        // 4. Update wallpaper live on MainActivity
+        // 4. Update wallpaper live on MainActivity if visible
         final String finalName = name;
-        activity.runOnUiThread(() -> {
-            try {
-                activity.onWallpaperChanged(finalName);
-            } catch (Exception e) {
+        MainActivity act = this.activity;
+        if (act != null) {
+            act.runOnUiThread(() -> {
                 try {
-                    activity.recreate();
-                } catch (Exception ignored) {}
-            }
-        });
+                    act.onWallpaperChanged(finalName);
+                } catch (Exception e) {
+                    try {
+                        act.recreate();
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
 
         JSONObject res = new JSONObject();
         res.put("status", "ok");
@@ -419,7 +427,7 @@ public class TvHubServer extends NanoHTTPD {
         }
         String name = params.get("name").get(0);
 
-        File themeDir = Config.dir(activity);
+        File themeDir = Config.dir(context);
         File target = themeDir != null ? new File(new File(themeDir, "wallpapers"), name) : null;
         if (target != null && target.exists() && target.isFile()) {
             String mime = "image/jpeg";
@@ -460,7 +468,7 @@ public class TvHubServer extends NanoHTTPD {
             return errorResponse(Response.Status.BAD_REQUEST, "No file uploaded");
         }
 
-        File themeDir = Config.dir(activity);
+        File themeDir = Config.dir(context);
         if (themeDir == null) {
             return errorResponse(Response.Status.INTERNAL_ERROR, "Storage unavailable");
         }
@@ -482,7 +490,10 @@ public class TvHubServer extends NanoHTTPD {
             tmpFile.delete();
         }
 
-        activity.runOnUiThread(activity::recreate);
+        MainActivity act = this.activity;
+        if (act != null) {
+            act.runOnUiThread(act::recreate);
+        }
 
         JSONObject res = new JSONObject();
         res.put("status", "ok");
@@ -497,11 +508,14 @@ public class TvHubServer extends NanoHTTPD {
         }
         String name = params.get("name").get(0);
 
-        File themeDir = Config.dir(activity);
+        File themeDir = Config.dir(context);
         File target = themeDir != null ? new File(new File(themeDir, "wallpapers"), name) : null;
         if (target != null && target.exists()) {
             target.delete();
-            activity.runOnUiThread(activity::recreate);
+            MainActivity act = this.activity;
+            if (act != null) {
+                act.runOnUiThread(act::recreate);
+            }
             JSONObject res = new JSONObject();
             res.put("status", "ok");
             res.put("deleted", name);
@@ -511,7 +525,7 @@ public class TvHubServer extends NanoHTTPD {
     }
 
     private Response handleGetApps() throws Exception {
-        PackageManager pm = activity.getPackageManager();
+        PackageManager pm = context.getPackageManager();
         Intent intent = new Intent(Intent.ACTION_MAIN, null);
         intent.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
         List<ResolveInfo> list = pm.queryIntentActivities(intent, 0);
@@ -544,21 +558,18 @@ public class TvHubServer extends NanoHTTPD {
             return errorResponse(Response.Status.BAD_REQUEST, "'package' required");
         }
 
-        PackageManager pm = activity.getPackageManager();
+        PackageManager pm = context.getPackageManager();
         Intent launch = pm.getLeanbackLaunchIntentForPackage(pkg);
         if (launch == null) launch = pm.getLaunchIntentForPackage(pkg);
 
         if (launch != null) {
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            final Intent launchIntent = launch;
-            activity.runOnUiThread(() -> {
-                try {
-                    activity.wakeUpScreen();
-                    activity.startActivity(launchIntent);
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to launch app: " + pkg, e);
-                }
-            });
+            MainActivity.wakeUpScreen(context);
+            try {
+                context.startActivity(launch);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to launch app: " + pkg, e);
+            }
             JSONObject res = new JSONObject();
             res.put("status", "ok");
             res.put("launched", pkg);
@@ -592,9 +603,30 @@ public class TvHubServer extends NanoHTTPD {
         }
 
         final String finalKey = key;
-        activity.runOnUiThread(() -> {
-            activity.handleRemoteNavigation(finalKey);
-        });
+        MainActivity act = this.activity;
+        if (act != null && act.hasWindowFocus()) {
+            act.runOnUiThread(() -> act.handleRemoteNavigation(finalKey));
+        } else {
+            if ("home".equals(finalKey)) {
+                if (!HomeKeyService.triggerGlobalHome()) {
+                    Intent home = new Intent(Intent.ACTION_MAIN)
+                            .addCategory(Intent.CATEGORY_HOME)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(home);
+                }
+            } else if ("back".equals(finalKey)) {
+                HomeKeyService.triggerGlobalBack();
+            } else {
+                MainActivity.wakeUpScreen(context);
+                if (act != null) {
+                    act.runOnUiThread(() -> act.handleRemoteNavigation(finalKey));
+                } else {
+                    Intent home = new Intent(context, MainActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                    context.startActivity(home);
+                }
+            }
+        }
 
         JSONObject res = new JSONObject();
         res.put("status", "ok");

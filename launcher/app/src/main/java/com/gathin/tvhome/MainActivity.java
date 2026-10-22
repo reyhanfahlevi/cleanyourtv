@@ -110,7 +110,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private String sourcePanelAction;
 
     private AppAdapter adapter;
-    private static TvHubServer hubServer;
+
     private RecyclerView grid;
     private FrameLayout root;
     private WallpaperPlayer wallpaperPlayer;
@@ -817,16 +817,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // Not after recreate(): the launch intent survives it and would open the settings again.
         if (savedInstanceState == null) openLauncherSettingsIfAsked(getIntent());
 
-        if (hubServer == null) {
-            try {
-                hubServer = new TvHubServer(this);
-                hubServer.start();
-            } catch (Exception e) {
-                android.util.Log.e("TvHome", "Failed to start TvHubServer", e);
-            }
-        } else {
-            hubServer.updateActivity(this);
-        }
+        // Keep TvHubService running in background/foreground for tvhub discovery and control
+        TvHubService.start(this);
+        TvHubService.updateActivity(this);
     }
 
     private boolean openLauncherSettingsIfAsked(Intent intent) {
@@ -868,6 +861,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onResume() {
         super.onResume();
+        TvHubService.updateActivity(this);
         // A festival that started or ended while Home was in the background: rebuild with or without it.
         if (festive != festival.active(LocalDate.now())) {
             recreate();
@@ -1021,6 +1015,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        TvHubService.updateActivity(null);
         wallpaperPlayer.close();
         ConnectivityManager cm = getSystemService(ConnectivityManager.class);
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
@@ -1101,12 +1096,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         return super.dispatchKeyEvent(event);   // arrows navigate; OK on a top-bar pill works as usual
     }
 
-    public void wakeUpScreen() {
+    public static void wakeUpScreen(Context ctx) {
+        if (ctx == null) return;
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                setTurnScreenOn(true);
-            }
-            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
             if (pm != null) {
                 @SuppressWarnings("deprecation")
                 PowerManager.WakeLock wl = pm.newWakeLock(
@@ -1115,6 +1108,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 );
                 wl.acquire(2500);
             }
+        } catch (Exception ignored) {}
+    }
+
+    public void wakeUpScreen() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setTurnScreenOn(true);
+            }
+            wakeUpScreen(this);
         } catch (Exception ignored) {}
     }
 
